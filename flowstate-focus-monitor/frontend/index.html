@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlowState 专注度监控 - 演示 UI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+        
+        .status-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .score-display {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .score-number {
+            font-size: 4em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .score-label {
+            color: #888;
+            font-size: 1.2em;
+            margin-top: 10px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .stat-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-label {
+            color: #888;
+            margin-top: 5px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .current-website {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .website-url {
+            font-weight: bold;
+            color: #667eea;
+            word-break: break-all;
+        }
+        
+        .website-status {
+            margin-top: 10px;
+            padding: 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        
+        .status-relevant {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-irrelevant {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 FlowState 专注度监控</h1>
+        
+        <!-- 启动页面 -->
+        <div id="start-page">
+            <div class="input-group">
+                <label for="task-name">请输入您的任务名称:</label>
+                <input type="text" id="task-name" placeholder="例如: 学习 Python 编程" value="学习 Python 编程">
+            </div>
+            
+            <button class="btn-primary" onclick="startMonitoring()">开始监控</button>
+            
+            <div id="start-error" class="alert alert-error hidden"></div>
+        </div>
+        
+        <!-- 监控页面 -->
+        <div id="monitor-page" class="hidden">
+            <div class="score-display">
+                <div class="score-number" id="focus-score">--</div>
+                <div class="score-label">专注度分数</div>
+            </div>
+            
+            <div class="status-card">
+                <h3 style="margin-bottom: 15px; color: #555;">📊 实时统计</h3>
+                
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value" id="relevant-count">0</div>
+                        <div class="stat-label">✅ 相关网站</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="irrelevant-count">0</div>
+                        <div class="stat-label">❌ 无关网站</div>
+                    </div>
+                </div>
+                
+                <div class="current-website" id="current-website">
+                    <div style="color: #888; font-size: 0.9em;">当前网站:</div>
+                    <div class="website-url" id="website-url">等待检测...</div>
+                    <div class="website-status hidden" id="website-status"></div>
+                </div>
+            </div>
+            
+            <button class="btn-danger" onclick="stopMonitoring()">停止监控</button>
+        </div>
+        
+        <!-- 总结页面 -->
+        <div id="summary-page" class="hidden">
+            <div class="alert alert-success">
+                <h3 style="margin-bottom: 10px;">🎉 监控完成!</h3>
+                <p id="summary-message"></p>
+            </div>
+            
+            <div class="score-display">
+                <div class="score-number" id="final-score">--</div>
+                <div class="score-label" id="final-grade">--</div>
+            </div>
+            
+            <div class="status-card">
+                <h3 style="margin-bottom: 15px; color: #555;">📈 会话总结</h3>
+                <div id="summary-details"></div>
+            </div>
+            
+            <button class="btn-primary" onclick="resetApp()">重新开始</button>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = 'http://localhost:5000';
+        let statusInterval = null;
+        
+        // 启动监控
+        async function startMonitoring() {
+            const taskName = document.getElementById('task-name').value.trim();
+            
+            if (!taskName) {
+                showError('start-error', '请输入任务名称');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/monitor/start`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        task_name: taskName,
+                        auto_check: true,
+                        check_interval: 10
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showPage('monitor-page');
+                    startStatusPolling();
+                } else {
+                    showError('start-error', data.error || '启动失败');
+                }
+            } catch (error) {
+                showError('start-error', '无法连接到服务器，请确保 API 服务器正在运行');
+            }
+        }
+        
+        // 停止监控
+        async function stopMonitoring() {
+            try {
+                const response = await fetch(`${API_BASE}/api/monitor/stop`, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    stopStatusPolling();
+                    showSummary(data.data);
+                } else {
+                    alert('停止失败: ' + data.error);
+                }
+            } catch (error) {
+                alert('停止失败: ' + error.message);
+            }
+        }
+        
+        // 轮询状态
+        function startStatusPolling() {
+            statusInterval = setInterval(updateStatus, 3000);
+            updateStatus(); // 立即更新一次
+        }
+        
+        function stopStatusPolling() {
+            if (statusInterval) {
+                clearInterval(statusInterval);
+                statusInterval = null;
+            }
+        }
+        
+        // 更新状态
+        async function updateStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/api/monitor/status`);
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    const status = data.data;
+                    
+                    // 更新分数
+                    document.getElementById('focus-score').textContent = 
+                        status.current_focus_score ? status.current_focus_score.toFixed(1) : '--';
+                    
+                    // 更新统计
+                    document.getElementById('relevant-count').textContent = status.relevant_websites || 0;
+                    document.getElementById('irrelevant-count').textContent = status.irrelevant_websites || 0;
+                    
+                    // 获取当前网站
+                    updateCurrentWebsite();
+                }
+            } catch (error) {
+                console.error('更新状态失败:', error);
+            }
+        }
+        
+        // 更新当前网站
+        async function updateCurrentWebsite() {
+            try {
+                const response = await fetch(`${API_BASE}/api/window/current`);
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    const window = data.data;
+                    document.getElementById('website-url').textContent = 
+                        window.url || window.title || '未知网站';
+                }
+            } catch (error) {
+                console.error('获取当前网站失败:', error);
+            }
+        }
+        
+        // 显示总结
+        function showSummary(summary) {
+            showPage('summary-page');
+            
+            document.getElementById('summary-message').textContent = 
+                `任务: ${summary.task_name} | 时长: ${summary.duration_minutes.toFixed(1)} 分钟`;
+            
+            document.getElementById('final-score').textContent = summary.focus_score.toFixed(1);
+            document.getElementById('final-grade').textContent = summary.grade;
+            
+            const details = `
+                <div style="line-height: 2;">
+                    <p>✅ 相关网站: ${summary.relevant_websites} 次</p>
+                    <p>❌ 无关网站: ${summary.irrelevant_websites} 次</p>
+                    <p>⏱️ 总时长: ${summary.duration_minutes.toFixed(1)} 分钟</p>
+                </div>
+            `;
+            
+            document.getElementById('summary-details').innerHTML = details;
+        }
+        
+        // 重置应用
+        function resetApp() {
+            showPage('start-page');
+            document.getElementById('focus-score').textContent = '--';
+            document.getElementById('relevant-count').textContent = '0';
+            document.getElementById('irrelevant-count').textContent = '0';
+            document.getElementById('website-url').textContent = '等待检测...';
+        }
+        
+        // 显示页面
+        function showPage(pageId) {
+            document.getElementById('start-page').classList.add('hidden');
+            document.getElementById('monitor-page').classList.add('hidden');
+            document.getElementById('summary-page').classList.add('hidden');
+            document.getElementById(pageId).classList.remove('hidden');
+        }
+        
+        // 显示错误
+        function showError(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.classList.remove('hidden');
+            setTimeout(() => element.classList.add('hidden'), 5000);
+        }
+        
+        // 页面加载时检查服务器状态
+        window.addEventListener('load', async () => {
+            try {
+                const response = await fetch(`${API_BASE}/api/health`);
+                const data = await response.json();
+                console.log('服务器状态:', data);
+            } catch (error) {
+                showError('start-error', '⚠️ 无法连接到 API 服务器，请先启动: python unified_api_server.py');
+            }
+        });
+    </script>
+</body>
+</html>
+
